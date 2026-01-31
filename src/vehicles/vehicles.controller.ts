@@ -1,7 +1,7 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Patch, Post, Param, Get } from '@nestjs/common';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehiclesService } from './vehicles.service';
-import { Get } from '@nestjs/common';
 
 @Controller('vehicles')
 export class VehiclesController {
@@ -17,7 +17,20 @@ export class VehiclesController {
   }
   
   @Get()
-findAll() {
-  return this.vehiclesService.findAll();
-}
+  findAll() {
+    return this.vehiclesService.findAll();
+  }
+  
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateVehicleDto,
+  ) {
+    const vehicle = await this.vehiclesService.update(id, dto);
+    return {
+      message: 'Vehículo actualizado con éxito',
+      vehicle,
+    };
+  }
+  
 }
