@@ -20,6 +20,12 @@ export class VehiclesController {
   findAll() {
     return this.vehiclesService.findAll();
   }
+
+  @Get(':id')
+async findOne(@Param('id') id: string) {
+  const vehicle = await this.vehiclesService.findOne(id);
+  return vehicle;
+}
   
   @Patch(':id')
   async update(

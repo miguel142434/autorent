@@ -28,6 +28,15 @@ export class VehiclesService {
     return this.vehicleModel.find().sort({ createdAt: -1 });
   }
 
+  async findOne(id: string) {
+  const vehicle = await this.vehicleModel.findById(id);
+  if (!vehicle) {
+    throw new NotFoundException('Vehículo no encontrado');
+  }
+  return vehicle;
+}
+
+
   async update(id: string, dto: UpdateVehicleDto) {
     const vehicle = await this.vehicleModel.findByIdAndUpdate(
       id,

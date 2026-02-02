@@ -1,9 +1,14 @@
-    import { IsInt, IsString, Max, Min, IsOptional } from 'class-validator';
+    import { IsInt, IsNotEmpty, IsString, Max, Min, IsOptional, Matches, Length } from 'class-validator';
 
     export class UpdateVehicleDto {
         @IsOptional()
         @IsString()
-        plate?: string;
+          @IsNotEmpty({ message: 'Campo obligatorio' })
+          @Length(6, 6, { message: 'La placa debe tener 6 caracteres' })
+          @Matches(/^[A-Z]{3}[0-9]{3}$/, {
+            message: 'Formato de placa inválido (ej: ABC123)'
+          })
+          plate: string;
 
         @IsOptional()
         @IsString()
