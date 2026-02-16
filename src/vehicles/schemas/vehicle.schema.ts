@@ -1,4 +1,39 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument } from 'mongoose';
+
+export type VehicleDocument = HydratedDocument<Vehicle>;
+
+export enum VehicleDocumentType {
+  SOAT = 'SOAT',
+  TARJETA_PROPIEDAD = 'TARJETA_PROPIEDAD',
+  TECNOMECANICA = 'TECNOMECANICA',
+}
+
+@Schema({ _id: true })
+export class LegalDocument {
+  @Prop({ required: true, enum: VehicleDocumentType })
+  type: VehicleDocumentType;
+
+  @Prop({ required: true, trim: true })
+  originalName: string;
+
+  @Prop({ required: true, trim: true })
+  mimeType: string;
+
+  @Prop({ required: true })
+  size: number;
+
+  @Prop({ required: true, trim: true })
+  storagePath: string;
+
+  @Prop({ required: true })
+  expiresAt: Date;
+
+  @Prop({ default: Date.now })
+  uploadedAt: Date;
+}
+
+export const LegalDocumentSchema = SchemaFactory.createForClass(LegalDocument);
 
 @Schema({ timestamps: true })
 export class Vehicle {
@@ -16,10 +51,12 @@ export class Vehicle {
 
   @Prop({ default: 'AVAILABLE' })
   status: string;
+
+  @Prop({ type: [LegalDocumentSchema], default: [] })
+  documents: LegalDocument[];
 }
 
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);
 
 // índice único
 VehicleSchema.index({ plate: 1 }, { unique: true });
-
