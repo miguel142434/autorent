@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { Client } from './clients/schemas/clients.schema';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -12,6 +14,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     MongooseModule.forRoot(process.env.MONGO_URI as string),
     AuthModule,
     VehiclesModule,
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
