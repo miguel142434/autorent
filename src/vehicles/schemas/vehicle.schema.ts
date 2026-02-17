@@ -12,25 +12,25 @@ export enum VehicleDocumentType {
 @Schema({ _id: true })
 export class LegalDocument {
   @Prop({ required: true, enum: VehicleDocumentType })
-  type: VehicleDocumentType;
+  type!: VehicleDocumentType;
 
   @Prop({ required: true, trim: true })
-  originalName: string;
+  originalName!: string;
 
   @Prop({ required: true, trim: true })
-  mimeType: string;
+  mimeType!: string;
 
   @Prop({ required: true })
-  size: number;
+  size!: number;
 
   @Prop({ required: true, trim: true })
-  storagePath: string;
+  storagePath!: string;
 
   @Prop({ required: true })
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @Prop({ default: Date.now })
-  uploadedAt: Date;
+  uploadedAt?: Date;
 }
 
 export const LegalDocumentSchema = SchemaFactory.createForClass(LegalDocument);
@@ -38,25 +38,22 @@ export const LegalDocumentSchema = SchemaFactory.createForClass(LegalDocument);
 @Schema({ timestamps: true })
 export class Vehicle {
   @Prop({ required: true, unique: true, trim: true, uppercase: true })
-  plate: string;
+  plate!: string;
 
   @Prop({ required: true, trim: true })
-  brand: string;
+  brand!: string;
 
   @Prop({ required: true, trim: true })
-  model: string;
+  model!: string;
 
   @Prop({ required: true, min: 1950, max: 2100 })
-  year: number;
+  year!: number;
 
   @Prop({ default: 'AVAILABLE' })
-  status: string;
+  status?: string;
 
   @Prop({ type: [LegalDocumentSchema], default: [] })
-  documents: LegalDocument[];
+  documents!: LegalDocument[];
 }
 
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);
-
-// índice único
-VehicleSchema.index({ plate: 1 }, { unique: true });

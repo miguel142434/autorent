@@ -1,8 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Delete,
+} from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-
 
 @Controller('clients')
 export class ClientsController {
@@ -36,11 +43,11 @@ export class ClientsController {
   }
 
   @Delete(':id')
-async remove(@Param('id') id: string) {
-  const client = await this.clientsService.remove(id);
-  return {
-    message: 'Cliente eliminado correctamente',
-    client,
-  };
-}
+  async remove(@Param('id') id: string) {
+    const client = await this.clientsService.remove(id);
+    return {
+      message: 'Cliente eliminado correctamente',
+      client,
+    };
+  }
 }
