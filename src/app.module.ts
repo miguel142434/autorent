@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { Client } from './clients/schemas/clients.schema';
 import { ClientsModule } from './clients/clients.module';
+import { AlquileresModule } from './rents/rents.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ClientsModule } from './clients/clients.module';
     AuthModule,
     VehiclesModule,
     ClientsModule,
+    AlquileresModule,
   ],
   controllers: [AppController],
   providers: [AppService],

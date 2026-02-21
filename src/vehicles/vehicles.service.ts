@@ -10,6 +10,7 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { LegalDocument, Vehicle } from './schemas/vehicle.schema';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { UploadVehicleDocumentDto } from './dto/upload-vehicle-document.dto';
+import { relative, join } from 'path';
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -89,12 +90,13 @@ export class VehiclesService {
     }
 
     const expiresAt = new Date(dto.expiresAt);
+    const relativePath = relative(process.cwd(), file.path);
     const newDocument: LegalDocument = {
       type: dto.type,
       originalName: file.originalname,
       mimeType: file.mimetype,
       size: file.size,
-      storagePath: file.path,
+      storagePath: relativePath,
       expiresAt,
       uploadedAt: new Date(),
     };
@@ -158,15 +160,17 @@ export class VehiclesService {
       throw new NotFoundException('Documento no encontrado');
     }
 
-    if (!existsSync(document.storagePath)) {
-      throw new NotFoundException('Archivo no encontrado en disco');
-    }
+    const absolutePath = join(process.cwd(), document.storagePath);
 
-    return {
-      storagePath: document.storagePath,
-      originalName: document.originalName,
-      mimeType: document.mimeType,
-    };
+if (!existsSync(absolutePath)) {
+  throw new NotFoundException('Archivo no encontrado en disco');
+}
+
+return {
+  storagePath: absolutePath,
+  originalName: document.originalName,
+  mimeType: document.mimeType,
+};
   }
 
   private validateObjectId(value: string, message: string) {

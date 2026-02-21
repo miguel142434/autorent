@@ -82,16 +82,13 @@ export class VehiclesController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (req, _file, cb) => {
-          const destinationPath = join(
-            process.cwd(),
-            'uploads',
-            'vehicles',
-            req.params.id,
-          );
-          if (!existsSync(destinationPath)) {
-            mkdirSync(destinationPath, { recursive: true });
+          const relativeBasePath = join('uploads', 'vehicles', req.params.id);
+          const absolutePath = join(process.cwd(), relativeBasePath);
+
+          if (!existsSync(absolutePath)) {
+            mkdirSync(absolutePath, { recursive: true });
           }
-          cb(null, destinationPath);
+          cb(null, absolutePath);
         },
         filename: (_req, file, cb) => {
           const extension = extname(file.originalname).toLowerCase();

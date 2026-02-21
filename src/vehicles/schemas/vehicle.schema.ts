@@ -49,8 +49,11 @@ export class Vehicle {
   @Prop({ required: true, min: 1950, max: 2100 })
   year!: number;
 
-  @Prop({ default: 'AVAILABLE' })
-  status?: string;
+  @Prop({
+    enum: ['AVAILABLE', 'RENTED'],
+    default: 'AVAILABLE',
+  })
+  status: string;
 
   @Prop({ type: [LegalDocumentSchema], default: [] })
   documents!: LegalDocument[];
