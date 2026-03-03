@@ -53,7 +53,13 @@ export class Vehicle {
     enum: ['AVAILABLE', 'RENTED'],
     default: 'AVAILABLE',
   })
-  status: string;
+  status!: string;
+
+  @Prop()
+  rentalLockToken?: string;
+
+  @Prop()
+  rentalLockUntil?: Date;
 
   @Prop({ type: [LegalDocumentSchema], default: [] })
   documents!: LegalDocument[];

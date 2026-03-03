@@ -10,6 +10,7 @@ import {
 import { CreateRentDto } from './dto/create-rent.dto';
 import { AlquileresService } from './rents.service';
 import { FinalizeRentDto } from './dto/finalize-rent.dto';
+import { CancelRentDto } from './dto/cancel-rent.dto';
 
 @Controller('alquileres')
 export class AlquileresController {
@@ -33,6 +34,11 @@ export class AlquileresController {
   @Patch(':id/finalizar')
   finalize(@Param('id') id: string, @Body() dto: FinalizeRentDto) {
     return this.service.finalize(id, dto);
+  }
+
+  @Patch(':id/cancelar')
+  cancel(@Param('id') id: string, @Body() dto: CancelRentDto) {
+    return this.service.cancel(id, dto);
   }
 
   @Delete(':id')

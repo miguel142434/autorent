@@ -21,8 +21,26 @@ export class Rent {
   @Prop({ default: 0 })
   diasExceso?: number;
 
-  @Prop({ enum: ['EN_CURSO', 'FINALIZADO', 'CANCELADO', 'ACTIVO'], default: 'EN_CURSO' })
+  @Prop({ trim: true })
+  motivoCancelacion?: string;
+
+  @Prop()
+  fechaCancelacion?: Date;
+
+  @Prop({
+    enum: ['PROGRAMADO', 'EN_CURSO', 'FINALIZADO', 'CANCELADO', 'ACTIVO'],
+    default: 'PROGRAMADO',
+  })
   estado: string;
 }
 
 export const RentSchema = SchemaFactory.createForClass(Rent);
+
+// Garantiza máximo un alquiler EN_CURSO por vehículo.
+RentSchema.index(
+  { vehiculo: 1, estado: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { estado: 'EN_CURSO' },
+  },
+);
