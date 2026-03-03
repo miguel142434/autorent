@@ -162,15 +162,15 @@ export class VehiclesService {
 
     const absolutePath = join(process.cwd(), document.storagePath);
 
-if (!existsSync(absolutePath)) {
-  throw new NotFoundException('Archivo no encontrado en disco');
-}
+    if (!existsSync(absolutePath)) {
+      throw new NotFoundException('Archivo no encontrado en disco');
+    }
 
-return {
-  storagePath: absolutePath,
-  originalName: document.originalName,
-  mimeType: document.mimeType,
-};
+    return {
+      storagePath: absolutePath,
+      originalName: document.originalName,
+      mimeType: document.mimeType,
+    };
   }
 
   private validateObjectId(value: string, message: string) {

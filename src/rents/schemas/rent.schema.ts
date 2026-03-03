@@ -15,7 +15,13 @@ export class Rent {
   @Prop({ required: true })
   fechaFin: Date;
 
-  @Prop({ enum: ['ACTIVO', 'FINALIZADO', 'CANCELADO'], default: 'ACTIVO' })
+  @Prop()
+  fechaFinReal?: Date;
+
+  @Prop({ default: 0 })
+  diasExceso?: number;
+
+  @Prop({ enum: ['EN_CURSO', 'FINALIZADO', 'CANCELADO', 'ACTIVO'], default: 'EN_CURSO' })
   estado: string;
 }
 
