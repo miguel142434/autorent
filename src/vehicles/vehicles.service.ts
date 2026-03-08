@@ -11,6 +11,7 @@ import { LegalDocument, Vehicle } from './schemas/vehicle.schema';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { UploadVehicleDocumentDto } from './dto/upload-vehicle-document.dto';
 import { relative, join } from 'path';
+import { Rent } from '../rents/schemas/rent.schema';
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -28,6 +29,7 @@ type UploadedFile = {
 export class VehiclesService {
   constructor(
     @InjectModel(Vehicle.name) private vehicleModel: Model<Vehicle>,
+    @InjectModel(Rent.name) private rentModel: Model<Rent>,
   ) {}
 
   async create(dto: CreateVehicleDto) {
@@ -201,4 +203,34 @@ export class VehiclesService {
       status,
     };
   }
+
+  async getVehicleRentHistory(vehicleId: string) {
+    if (!isValidObjectId(vehicleId)) {
+      throw new NotFoundException('Vehículo no encontrado');
+    }
+
+    const vehicle = await this.vehicleModel.findById(vehicleId);
+    if (!vehicle) {
+      throw new NotFoundException('Vehículo no encontrado');
+    }
+
+    const rents = await this.rentModel
+      .find({ vehiculo: vehicleId })
+      .populate('cliente')
+      .sort({ createdAt: -1 });
+
+    if (rents.length === 0) {
+      return {
+        message: 'Sin historial de alquileres',
+        historial: [],
+      };
+    }
+
+    return {
+      vehicleId,
+      total: rents.length,
+      historial: rents,
+    };
+  }
+
 }

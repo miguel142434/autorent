@@ -136,4 +136,11 @@ export class VehiclesController {
     const file = await this.vehiclesService.getDocumentFile(id, docId);
     return res.download(file.storagePath, file.originalName);
   }
+
+  @Get(':id/alquileres')
+  @UseGuards(JwtAuthGuard)
+  async getVehicleRents(@Param('id') id: string) {
+    return this.vehiclesService.getVehicleRentHistory(id);
+  }
+
 }
