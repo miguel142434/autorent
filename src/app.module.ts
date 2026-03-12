@@ -8,6 +8,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
 import { Client } from './clients/schemas/clients.schema';
 import { ClientsModule } from './clients/clients.module';
 import { AlquileresModule } from './rents/rents.module';
+import { MaintenancesModule } from './maintenances/maintenances.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AlquileresModule } from './rents/rents.module';
     VehiclesModule,
     ClientsModule,
     AlquileresModule,
+    MaintenancesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
