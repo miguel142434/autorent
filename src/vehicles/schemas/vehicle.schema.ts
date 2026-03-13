@@ -50,8 +50,8 @@ export class Vehicle {
   year!: number;
 
   @Prop({
-    enum: ['AVAILABLE', 'RENTED'],
-    default: 'AVAILABLE',
+    enum: ['DISPONIBLE', 'ALQUILADO', 'MANTENIMIENTO'],
+    default: 'DISPONIBLE',
   })
   status!: string;
 

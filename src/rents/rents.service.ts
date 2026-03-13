@@ -6,7 +6,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { Client } from 'src/clients/schemas/clients.schema';
+import { Maintenance } from 'src/maintenances/schemas/maintenance.schema';
 import { Vehicle } from 'src/vehicles/schemas/vehicle.schema';
+import { RemindersService } from 'src/reminders/reminders.service';
+import { ReminderEvent } from 'src/reminders/schemas/reminder.schema';
 import { Rent } from './schemas/rent.schema';
 import { CreateRentDto } from './dto/create-rent.dto';
 import { FinalizeRentDto } from './dto/finalize-rent.dto';
@@ -18,9 +21,12 @@ export class AlquileresService {
     @InjectModel(Rent.name) private rentModel: Model<Rent>,
     @InjectModel(Vehicle.name) private vehicleModel: Model<Vehicle>,
     @InjectModel(Client.name) private clientModel: Model<Client>,
+    @InjectModel(Maintenance.name)
+    private maintenanceModel: Model<Maintenance>,
+    private remindersService: RemindersService,
   ) {}
 
-  async create(dto: CreateRentDto) {
+  async create(dto: CreateRentDto, userId: string) {
     await this.syncRentalStatuses();
 
     const { cliente, vehiculo, fechaInicio, fechaFin } = dto;
@@ -77,6 +83,18 @@ export class AlquileresService {
         );
       }
 
+      const overlappingMaintenance = await this.maintenanceModel.findOne({
+        vehiculo_id: vehiculo,
+        fechaInicio: { $lte: fin },
+        fechaEntrega: { $gte: inicio },
+      });
+
+      if (overlappingMaintenance) {
+        throw new BadRequestException(
+          'El vehículo tiene un mantenimiento en las fechas seleccionadas',
+        );
+      }
+
       // 4. Crear alquiler
       const estadoInicial = inicio <= today ? 'EN_CURSO' : 'PROGRAMADO';
 
@@ -101,6 +119,36 @@ export class AlquileresService {
 
       if (estadoInicial === 'EN_CURSO') {
         await this.updateVehicleOperationalStatus(String(vehiculo));
+      }
+
+      if (dto.createStartReminder) {
+        await this.remindersService.upsertRentReminder({
+          rentId: String((rent as any)._id),
+          vehicleId: String(vehiculo),
+          userId,
+          fechaRecordatorio: this.parseDateToStartOfDay(
+            dto.startReminderDate ?? fechaInicio,
+          ),
+          clientLabel: clientExists.fullName || clientExists.email,
+          evento: ReminderEvent.INICIO,
+          titulo: dto.startReminderTitle,
+          detalle: dto.startReminderDetail,
+        });
+      }
+
+      if (dto.createReturnReminder) {
+        await this.remindersService.upsertRentReminder({
+          rentId: String((rent as any)._id),
+          vehicleId: String(vehiculo),
+          userId,
+          fechaRecordatorio: this.parseDateToStartOfDay(
+            dto.returnReminderDate ?? fechaFin,
+          ),
+          clientLabel: clientExists.fullName || clientExists.email,
+          evento: ReminderEvent.DEVOLUCION,
+          titulo: dto.returnReminderTitle,
+          detalle: dto.returnReminderDetail,
+        });
       }
 
       return rent;
@@ -150,6 +198,10 @@ export class AlquileresService {
       throw new BadRequestException(
         'No se puede eliminar un contrato en curso',
       );
+    }
+
+    if (rent.estado === 'PROGRAMADO') {
+      await this.remindersService.cancelRentReminder(String(rent._id));
     }
 
     await this.rentModel.findByIdAndDelete(id);
@@ -231,6 +283,10 @@ export class AlquileresService {
     rent.motivoCancelacion = motivo;
     rent.fechaCancelacion = new Date();
     await rent.save();
+
+    if (rent.estado === 'CANCELADO' && rent.fechaInicio > this.startOfDay(new Date())) {
+      await this.remindersService.cancelRentReminder(String(rent._id));
+    }
     await this.updateVehicleOperationalStatus(String(rent.vehiculo));
 
     return {
@@ -319,7 +375,7 @@ export class AlquileresService {
     if (updatedVehicleIds.size > 0) {
       await this.vehicleModel.updateMany(
         { _id: { $in: Array.from(updatedVehicleIds) } },
-        { $set: { status: 'RENTED' } },
+        { $set: { status: 'ALQUILADO' } },
       );
     }
   }
@@ -327,13 +383,27 @@ export class AlquileresService {
   private async updateVehicleOperationalStatus(vehicleId: string) {
     if (!isValidObjectId(vehicleId)) return;
 
+    const today = this.startOfDay(new Date());
+    const activeMaintenance = await this.maintenanceModel.exists({
+      vehiculo_id: vehicleId,
+      fechaInicio: { $lte: today },
+      fechaEntrega: { $gte: today },
+    });
+
+    if (activeMaintenance) {
+      await this.vehicleModel.findByIdAndUpdate(vehicleId, {
+        $set: { status: 'MANTENIMIENTO' },
+      });
+      return;
+    }
+
     const activeRent = await this.rentModel.exists({
       vehiculo: vehicleId,
       estado: { $in: ['EN_CURSO', 'ACTIVO'] },
     });
 
     await this.vehicleModel.findByIdAndUpdate(vehicleId, {
-      $set: { status: activeRent ? 'RENTED' : 'AVAILABLE' },
+      $set: { status: activeRent ? 'ALQUILADO' : 'DISPONIBLE' },
     });
   }
 

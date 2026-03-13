@@ -1,4 +1,12 @@
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { MaintenanceType } from '../schemas/maintenance.schema';
  
 export class CreateMaintenanceDto {
@@ -11,10 +19,29 @@ export class CreateMaintenanceDto {
   descripcion: string;
  
   @IsDateString()
-  fecha: string;
+  fechaInicio: string;
+
+  @IsDateString()
+  fechaEntrega: string;
  
   @IsOptional()
   @IsNumber()
   @Min(0)
   costo?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  crearRecordatorio?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  fechaRecordatorio?: string;
+
+  @IsOptional()
+  @IsString()
+  tituloRecordatorio?: string;
+
+  @IsOptional()
+  @IsString()
+  detalleRecordatorio?: string;
 }

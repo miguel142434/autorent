@@ -1,7 +1,16 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto';
 import { MaintenancesService } from './maintenances.service';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
  
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -10,8 +19,12 @@ export class MaintenancesController {
  
   // POST /vehiculos/:id/mantenimientos
   @Post(['vehiculos/:id/mantenimientos', 'vehicles/:id/mantenimientos'])
-  create(@Param('id') vehicleId: string, @Body() dto: CreateMaintenanceDto) {
-    return this.maintenancesService.create(vehicleId, dto);
+  create(
+    @Param('id') vehicleId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateMaintenanceDto,
+  ) {
+    return this.maintenancesService.create(vehicleId, dto, req.user.id);
   }
  
   // GET /vehiculos/:id/mantenimientos

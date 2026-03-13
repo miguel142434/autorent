@@ -19,11 +19,19 @@ export class Maintenance {
   @Prop({ required: true, trim: true })
   descripcion: string;
  
-  @Prop({ required: true })
-  fecha: Date;
+  @Prop({ required: true, index: true })
+  fechaInicio: Date;
+
+  @Prop({ required: true, index: true })
+  fechaEntrega: Date;
  
   @Prop({ min: 0, default: 0 })
   costo: number;
 }
  
 export const MaintenanceSchema = SchemaFactory.createForClass(Maintenance);
+
+MaintenanceSchema.index(
+  { vehiculo_id: 1, fechaInicio: 1, fechaEntrega: 1 },
+  { name: 'maintenance_vehicle_date_range_idx' },
+);

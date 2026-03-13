@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { existsSync } from 'fs';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { Maintenance } from '../maintenances/schemas/maintenance.schema';
 import { LegalDocument, Vehicle } from './schemas/vehicle.schema';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { UploadVehicleDocumentDto } from './dto/upload-vehicle-document.dto';
@@ -30,6 +31,8 @@ export class VehiclesService {
   constructor(
     @InjectModel(Vehicle.name) private vehicleModel: Model<Vehicle>,
     @InjectModel(Rent.name) private rentModel: Model<Rent>,
+    @InjectModel(Maintenance.name)
+    private maintenanceModel: Model<Maintenance>,
   ) {}
 
   async create(dto: CreateVehicleDto) {
@@ -43,14 +46,16 @@ export class VehiclesService {
     return this.vehicleModel.create({
       ...dto,
       plate,
-      status: 'AVAILABLE',
+      status: 'DISPONIBLE',
     });
   }
   async findAll() {
+    await this.syncVehicleStatuses();
     return this.vehicleModel.find().sort({ createdAt: -1 });
   }
 
   async findOne(id: string) {
+    await this.syncVehicleStatuses(id);
     const vehicle = await this.vehicleModel.findById(id);
     if (!vehicle) {
       throw new NotFoundException('Vehículo no encontrado');
@@ -231,6 +236,46 @@ export class VehiclesService {
       total: rents.length,
       historial: rents,
     };
+  }
+
+  private async syncVehicleStatuses(vehicleId?: string) {
+    const today = this.startOfDay(new Date());
+    const filter = vehicleId ? { _id: vehicleId } : {};
+    const vehicles = await this.vehicleModel.find(filter).select('_id status');
+
+    for (const vehicle of vehicles) {
+      const id = String(vehicle._id);
+      const activeMaintenance = await this.maintenanceModel.exists({
+        vehiculo_id: id,
+        fechaInicio: { $lte: today },
+        fechaEntrega: { $gte: today },
+      });
+
+      let status = 'DISPONIBLE';
+
+      if (activeMaintenance) {
+        status = 'MANTENIMIENTO';
+      } else {
+        const activeRent = await this.rentModel.exists({
+          vehiculo: id,
+          estado: { $in: ['EN_CURSO', 'ACTIVO'] },
+        });
+        status = activeRent ? 'ALQUILADO' : 'DISPONIBLE';
+      }
+
+      if (vehicle.status !== status) {
+        await this.vehicleModel.updateOne(
+          { _id: id },
+          { $set: { status } },
+        );
+      }
+    }
+  }
+
+  private startOfDay(date: Date) {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
   }
 
 }
