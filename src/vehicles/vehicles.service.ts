@@ -51,7 +51,7 @@ export class VehiclesService {
   }
   async findAll() {
     await this.syncVehicleStatuses();
-    return this.vehicleModel.find().sort({ createdAt: -1 });
+    return this.vehicleModel.find({ status: { $ne: 'INACTIVO' } }).sort({ createdAt: -1 });
   }
 
   async findOne(id: string) {
@@ -241,7 +241,9 @@ export class VehiclesService {
   private async syncVehicleStatuses(vehicleId?: string) {
     const today = this.startOfDay(new Date());
     const filter = vehicleId ? { _id: vehicleId } : {};
-    const vehicles = await this.vehicleModel.find(filter).select('_id status');
+    const vehicles = await this.vehicleModel
+    .find({ ...filter, status: { $ne: 'INACTIVO' } })
+    .select('_id status');
 
     for (const vehicle of vehicles) {
       const id = String(vehicle._id);
@@ -277,5 +279,39 @@ export class VehiclesService {
     normalized.setHours(0, 0, 0, 0);
     return normalized;
   }
+
+  async delete(id: string) {
+    this.validateObjectId(id, 'Vehículo no encontrado');
+
+    const vehicle = await this.vehicleModel.findById(id);
+
+    if (!vehicle) {
+      throw new NotFoundException('Vehículo no encontrado');
+    } 
+
+    if (vehicle.status === 'INACTIVO') {
+      throw new BadRequestException('El vehículo ya está inactivo');
+    }
+
+    const activeRent = await this.rentModel.exists({
+      vehiculo: id,
+      estado: { $in: ['EN_CURSO', 'ACTIVO'] },
+    });
+
+    if (activeRent) {
+      throw new BadRequestException(
+        'No se puede eliminar un vehículo con un alquiler activo',
+      );
+    }
+
+    vehicle.status = 'INACTIVO';
+    await vehicle.save();
+
+    return {
+      message: 'Vehículo desactivado correctamente',
+      vehicleId: id,
+    };
+}
+
 
 }

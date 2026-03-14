@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -142,5 +143,17 @@ export class VehiclesController {
   async getVehicleRents(@Param('id') id: string) {
     return this.vehiclesService.getVehicleRentHistory(id);
   }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteVehicle(@Param('id') id: string) {
+    const vehicle = await this.vehiclesService.delete(id);
+
+    return {
+      message: 'Vehículo eliminado con éxito',
+      vehicle,
+    };
+  }
+
 
 }
