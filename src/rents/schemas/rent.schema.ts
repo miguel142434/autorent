@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Types } from "mongoose";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Rent {
@@ -15,32 +15,20 @@ export class Rent {
   @Prop({ required: true })
   fechaFin: Date;
 
-  @Prop()
-  fechaFinReal?: Date;
-
-  @Prop({ default: 0 })
-  diasExceso?: number;
-
-  @Prop({ trim: true })
-  motivoCancelacion?: string;
-
-  @Prop()
-  fechaCancelacion?: Date;
-
   @Prop({
-    enum: ['PROGRAMADO', 'EN_CURSO', 'FINALIZADO', 'CANCELADO', 'ACTIVO'],
-    default: 'PROGRAMADO',
+    enum: ['ACTIVO'],
+    default: 'ACTIVO',
   })
   estado: string;
 }
 
 export const RentSchema = SchemaFactory.createForClass(Rent);
 
-// Garantiza máximo un alquiler EN_CURSO por vehículo.
+// Garantiza maximo un alquiler activo por vehiculo en la version simplificada.
 RentSchema.index(
   { vehiculo: 1, estado: 1 },
   {
     unique: true,
-    partialFilterExpression: { estado: 'EN_CURSO' },
+    partialFilterExpression: { estado: 'ACTIVO' },
   },
 );

@@ -1,10 +1,4 @@
-import {
-  IsBoolean,
-  IsDateString,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from "class-validator";
+import { IsDateString, IsNotEmpty } from 'class-validator';
 
 export class CreateRentDto {
   @IsNotEmpty()
@@ -18,36 +12,4 @@ export class CreateRentDto {
 
   @IsDateString()
   fechaFin: string;
-
-  @IsOptional()
-  @IsBoolean()
-  createStartReminder?: boolean;
-
-  @IsOptional()
-  @IsDateString()
-  startReminderDate?: string;
-
-  @IsOptional()
-  @IsString()
-  startReminderTitle?: string;
-
-  @IsOptional()
-  @IsString()
-  startReminderDetail?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  createReturnReminder?: boolean;
-
-  @IsOptional()
-  @IsDateString()
-  returnReminderDate?: string;
-
-  @IsOptional()
-  @IsString()
-  returnReminderTitle?: string;
-
-  @IsOptional()
-  @IsString()
-  returnReminderDetail?: string;
 }
