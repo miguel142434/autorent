@@ -1,611 +1,233 @@
-openapi: 3.0.3
-info:
-  title: Autorent API
-  version: 1.0.0
-  description: >
-    Contrato OpenAPI para frontend. Incluye autenticación, vehículos y documentos
-    (subida/listado/consulta/descarga).
-servers:
-  - url: http://localhost:3000
-    description: Local
+﻿# AutoRent
 
-tags:
-  - name: Auth
-  - name: Vehiculos
-  - name: Documentos
+AutoRent es una aplicacion para gestionar clientes, vehiculos y rentas basicas de vehiculos. El proyecto se ejecuta localmente con un backend en NestJS, un frontend en React y una base de datos MongoDB local.
 
-paths:
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Iniciar sesión
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
-          description: Login exitoso
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
-          description: Error de validación
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Credenciales inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+## Arquitectura
 
-  /auth/me:
-    get:
-      tags: [Auth]
-      summary: Obtener usuario autenticado
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Usuario autenticado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MeResponse'
-        '401':
-          description: Token inválido o ausente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+El proyecto usa una arquitectura monolitica modular.
 
-  /vehiculos:
-    post:
-      tags: [Vehiculos]
-      summary: Crear vehículo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateVehicleRequest'
-      responses:
-        '201':
-          description: Vehículo creado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VehicleMutationResponse'
-        '400':
-          description: Validación o placa duplicada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    get:
-      tags: [Vehiculos]
-      summary: Listar vehículos
-      responses:
-        '200':
-          description: Lista de vehículos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Vehicle'
+Es monolitica porque el backend se ejecuta como una sola aplicacion NestJS. Todas las funcionalidades principales viven en el mismo proceso, se levantan con el mismo comando y comparten la misma conexion a MongoDB.
 
-  /vehiculos/{id}:
-    get:
-      tags: [Vehiculos]
-      summary: Obtener vehículo por ID
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      responses:
-        '200':
-          description: Vehículo encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vehicle'
-        '404':
-          description: Vehículo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    patch:
-      tags: [Vehiculos]
-      summary: Actualizar vehículo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateVehicleRequest'
-      responses:
-        '200':
-          description: Vehículo actualizado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VehicleMutationResponse'
-        '400':
-          description: Error de validación
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Vehículo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+Es modular porque el codigo esta separado por dominios dentro del mismo backend:
 
-  /vehiculos/{id}/documentos:
-    post:
-      tags: [Documentos]
-      summary: Subir documento a vehículo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadDocumentRequest'
-      responses:
-        '201':
-          description: Documento cargado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UploadDocumentResponse'
-        '400':
-          description: Formato no permitido o validación de campos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Vehículo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    get:
-      tags: [Documentos]
-      summary: Listar documentos de un vehículo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      responses:
-        '200':
-          description: Lista de documentos
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  documents:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/VehicleDocument'
-        '404':
-          description: Vehículo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+```txt
+src/
+├── auth/
+├── clients/
+├── vehicles/
+├── rents/
+├── seed/
+├── app.module.ts
+└── main.ts
+```
 
-  /vehiculos/{id}/documentos/{docId}:
-    get:
-      tags: [Documentos]
-      summary: Obtener metadata de documento
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-        - $ref: '#/components/parameters/DocumentId'
-      responses:
-        '200':
-          description: Documento encontrado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  document:
-                    $ref: '#/components/schemas/VehicleDocument'
-        '404':
-          description: Vehículo o documento no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+Los modulos no son microservicios. No se despliegan por separado y no se comunican por HTTP entre ellos. NestJS los conecta internamente dentro de la misma aplicacion.
 
-  /vehiculos/{id}/documentos/{docId}/descargar:
-    get:
-      tags: [Documentos]
-      summary: Descargar archivo del documento
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-        - $ref: '#/components/parameters/DocumentId'
-      responses:
-        '200':
-          description: Archivo binario
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: Vehículo, documento o archivo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+La estructura general es:
 
-  /vehicles:
-    post:
-      tags: [Vehiculos]
-      summary: Alias de /vehiculos - Crear vehículo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateVehicleRequest'
-      responses:
-        '201':
-          description: Vehículo creado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VehicleMutationResponse'
-    get:
-      tags: [Vehiculos]
-      summary: Alias de /vehiculos - Listar vehículos
-      responses:
-        '200':
-          description: Lista de vehículos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Vehicle'
+```txt
+Frontend React
+      |
+      | HTTP
+      v
+Backend NestJS monolitico modular
+      |
+      | Mongoose
+      v
+MongoDB local
+```
 
-  /vehicles/{id}:
-    get:
-      tags: [Vehiculos]
-      summary: Alias de /vehiculos/{id} - Obtener vehículo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      responses:
-        '200':
-          description: Vehículo encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vehicle'
-    patch:
-      tags: [Vehiculos]
-      summary: Alias de /vehiculos/{id} - Actualizar vehículo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateVehicleRequest'
-      responses:
-        '200':
-          description: Vehículo actualizado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VehicleMutationResponse'
+La funcionalidad principal trabajada es la gestion basica de rentas:
 
-  /vehicles/{id}/documentos:
-    post:
-      tags: [Documentos]
-      summary: Alias de /vehiculos/{id}/documentos - Subir documento
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadDocumentRequest'
-      responses:
-        '201':
-          description: Documento cargado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UploadDocumentResponse'
-    get:
-      tags: [Documentos]
-      summary: Alias de /vehiculos/{id}/documentos - Listar documentos
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-      responses:
-        '200':
-          description: Lista de documentos
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  documents:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/VehicleDocument'
+```txt
+Cliente existente + Vehiculo disponible + Fechas validas
+                         |
+                         v
+                   Crear renta
+                         |
+                         v
+              Vehiculo pasa a ALQUILADO
+```
 
-  /vehicles/{id}/documentos/{docId}:
-    get:
-      tags: [Documentos]
-      summary: Alias de /vehiculos/{id}/documentos/{docId} - Obtener metadata
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-        - $ref: '#/components/parameters/DocumentId'
-      responses:
-        '200':
-          description: Documento encontrado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  document:
-                    $ref: '#/components/schemas/VehicleDocument'
+## Requisitos
 
-  /vehicles/{id}/documentos/{docId}/descargar:
-    get:
-      tags: [Documentos]
-      summary: Alias de /vehiculos/{id}/documentos/{docId}/descargar - Descargar archivo
-      parameters:
-        - $ref: '#/components/parameters/VehicleId'
-        - $ref: '#/components/parameters/DocumentId'
-      responses:
-        '200':
-          description: Archivo binario
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+Antes de correr el proyecto necesitas:
 
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+- Node.js 20 o superior.
+- npm.
+- MongoDB corriendo localmente.
+- Dos terminales: una para backend y otra para frontend.
 
-  parameters:
-    VehicleId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      example: 65f0c1f9e8c4a1b2c3d4e5f6
-    DocumentId:
-      name: docId
-      in: path
-      required: true
-      schema:
-        type: string
-      example: 65f0c2a9e8c4a1b2c3d4e600
+## Puertos
 
-  schemas:
-    LoginRequest:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-          format: email
-          example: admin@autorent.local
-        password:
-          type: string
-          minLength: 6
-          example: Admin123
+```txt
+Backend:  http://localhost:3000
+Frontend: http://127.0.0.1:5173
+MongoDB:  mongodb://127.0.0.1:27017/autorent
+```
 
-    LoginResponse:
-      type: object
-      properties:
-        access_token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxx.yyy
-        user:
-          $ref: '#/components/schemas/MeResponse'
+## 1. Configurar MongoDB local
 
-    MeResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          example: 65f0c1f9e8c4a1b2c3d4e5f6
-        email:
-          type: string
-          format: email
-          example: admin@autorent.local
-        role:
-          type: string
-          example: ADMIN
+Inicia MongoDB en tu computador.
 
-    CreateVehicleRequest:
-      type: object
-      required: [plate, brand, model, year]
-      properties:
-        plate:
-          type: string
-          description: Formato ABC123
-          pattern: '^[A-Z]{3}[0-9]{3}$'
-          minLength: 6
-          maxLength: 6
-          example: ABC123
-        brand:
-          type: string
-          example: Mazda
-        model:
-          type: string
-          example: 3
-        year:
-          type: integer
-          minimum: 1950
-          maximum: 2100
-          example: 2021
+La cadena local recomendada es:
 
-    UpdateVehicleRequest:
-      type: object
-      properties:
-        plate:
-          type: string
-          pattern: '^[A-Z]{3}[0-9]{3}$'
-          minLength: 6
-          maxLength: 6
-          example: DEF456
-        brand:
-          type: string
-          example: Toyota
-        model:
-          type: string
-          example: Corolla
-        year:
-          type: integer
-          minimum: 1950
-          maximum: 2100
-          example: 2022
+```txt
+mongodb://127.0.0.1:27017/autorent
+```
 
-    Vehicle:
-      type: object
-      properties:
-        _id:
-          type: string
-          example: 65f0c1f9e8c4a1b2c3d4e5f6
-        plate:
-          type: string
-          example: ABC123
-        brand:
-          type: string
-          example: Mazda
-        model:
-          type: string
-          example: 3
-        year:
-          type: integer
-          example: 2021
-        status:
-          type: string
-          example: AVAILABLE
-        documents:
-          type: array
-          items:
-            $ref: '#/components/schemas/VehicleDocument'
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-02-16T00:00:00.000Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-02-16T00:00:00.000Z'
+Si usas MongoDB Compass, conectate a:
 
-    VehicleMutationResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Vehículo creado con éxito
-        vehicle:
-          $ref: '#/components/schemas/Vehicle'
+```txt
+mongodb://127.0.0.1:27017
+```
 
-    UploadDocumentRequest:
-      type: object
-      required: [type, expiresAt, file]
-      properties:
-        type:
-          type: string
-          enum: [SOAT, TARJETA_PROPIEDAD, TECNOMECANICA]
-          example: SOAT
-        expiresAt:
-          type: string
-          format: date
-          example: '2026-12-31'
-        file:
-          type: string
-          format: binary
+La base de datos `autorent` se crea automaticamente cuando la aplicacion guarda datos.
 
-    VehicleDocument:
-      type: object
-      properties:
-        id:
-          type: string
-          example: 65f0c2a9e8c4a1b2c3d4e600
-        type:
-          type: string
-          enum: [SOAT, TARJETA_PROPIEDAD, TECNOMECANICA]
-          example: SOAT
-        originalName:
-          type: string
-          example: soat.pdf
-        mimeType:
-          type: string
-          example: application/pdf
-        size:
-          type: integer
-          example: 123456
-        storagePath:
-          type: string
-          example: /path/to/uploads/vehicles/65f0c1f9e8c4a1b2c3d4e5f6/1739712457012-1234.pdf
-        expiresAt:
-          type: string
-          format: date-time
-          example: '2026-12-31T00:00:00.000Z'
-        uploadedAt:
-          type: string
-          format: date-time
-          example: '2026-02-16T00:00:00.000Z'
-        status:
-          type: string
-          enum: [VIGENTE, VENCIDO]
-          example: VIGENTE
+## 2. Configurar el backend
 
-    UploadDocumentResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Documento cargado con éxito
-        document:
-          $ref: '#/components/schemas/VehicleDocument'
+Abre una terminal en la carpeta del backend:
 
-    ErrorResponse:
-      type: object
-      properties:
-        statusCode:
-          type: integer
-          example: 400
-        message:
-          oneOf:
-            - type: string
-              example: Formato no permitido
-            - type: array
-              items:
-                type: string
-              example: ["year must not be less than 1950"]
-        error:
-          type: string
-          example: Bad Request
+```bash
+cd "C:\Users\EIA2024\Desktop\Universidad EIA\Quinto Semestre\Análisis y Diseño de Software\autorent_backend\autorent"
+```
+
+Instala dependencias:
+
+```bash
+npm install
+```
+
+Crea o edita el archivo `.env` en la raiz del backend:
+
+```env
+PORT=3000
+MONGO_URI=mongodb://127.0.0.1:27017/autorent
+JWT_SECRET=super_secreto_largo_y_unico
+JWT_EXPIRES_IN=1d
+ADMIN_EMAIL=admin@autorent.local
+ADMIN_PASSWORD=Admin123
+```
+
+Ejecuta el backend:
+
+```bash
+npm run start:dev
+```
+
+El backend queda disponible en:
+
+```txt
+http://localhost:3000
+```
+
+## 3. Configurar el frontend
+
+Abre otra terminal en la carpeta del frontend:
+
+```bash
+cd "C:\Users\EIA2024\Desktop\Universidad EIA\Quinto Semestre\Análisis y Diseño de Software\autorent_frontend"
+```
+
+Instala dependencias:
+
+```bash
+npm install
+```
+
+Ejecuta el frontend:
+
+```bash
+npm run dev
+```
+
+Abre en el navegador la URL que muestra Vite. Normalmente es:
+
+```txt
+http://127.0.0.1:5173/
+```
+
+## 4. Usuario administrador
+
+Al iniciar el backend, el seed crea automaticamente un administrador si no existe.
+
+Con la configuracion anterior puedes iniciar sesion con:
+
+```txt
+Correo: admin@autorent.local
+Clave:  Admin123
+```
+
+## 5. Flujo para probar la aplicacion
+
+1. Inicia MongoDB local.
+2. Corre el backend con `npm run start:dev`.
+3. Corre el frontend con `npm run dev`.
+4. Abre `http://127.0.0.1:5173/`.
+5. Inicia sesion con el usuario administrador.
+6. Crea un cliente.
+7. Crea un vehiculo.
+8. Crea un alquiler con ese cliente y ese vehiculo.
+9. Verifica que el vehiculo quede en estado `ALQUILADO`.
+
+## Scripts del backend
+
+```bash
+npm run start:dev   # Ejecuta el backend en desarrollo
+npm run build       # Compila el backend
+npm run test        # Ejecuta pruebas
+```
+
+## Scripts del frontend
+
+```bash
+npm run dev     # Ejecuta el frontend en desarrollo
+npm run build   # Compila el frontend
+npm run lint    # Ejecuta revision de lint
+```
+
+## Endpoints principales
+
+```txt
+POST /auth/login
+GET  /auth/me
+
+GET  /clients
+POST /clients
+
+GET  /vehicles
+POST /vehicles
+GET  /vehicles/:id
+PATCH /vehicles/:id
+DELETE /vehicles/:id
+GET  /vehiculos/:id/alquileres
+
+GET  /alquileres
+POST /alquileres
+GET  /alquileres/:id
+```
+
+## Documentacion adicional
+
+La documentacion del proyecto esta en:
+
+```txt
+docs/
+├── arquitectura.md
+├── modelo-dominio.md
+├── diagramas/
+└── decisiones/
+```
+
+El contrato OpenAPI anterior se conserva en:
+
+```txt
+docs/openapi.yaml
+```
+
+## Notas importantes
+
+- No subas el archivo `.env` al repositorio.
+- Para correr localmente usa MongoDB local, no MongoDB Atlas.
+- El frontend espera que el backend este corriendo en `http://localhost:3000`.
+- Si cambias el puerto del backend, tambien debes ajustar la URL usada por el frontend.
